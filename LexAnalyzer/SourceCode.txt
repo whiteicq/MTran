@@ -1,9 +1,10 @@
 int i;
-for (i = 1; i <= n; i++) {
 int n;
 int res;
 
 cin >> n;
+
+for (i = 1; i <= n; i++) {
     res = res * i;
 }
 cout << res;

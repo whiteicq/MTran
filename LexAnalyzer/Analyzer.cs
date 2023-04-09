@@ -12,8 +12,8 @@ namespace LexAnalyzer
 
         private string? currentLine = string.Empty;
 
-        private static string[] _boolOperators = new string[] { "==", ">=", "<=", "!=", ">", "<",  };
-        private static string[] _mathOperators = new string[] 
+        private static string[] _boolOperators = new string[] { "==", ">=", "<=", "!=", ">", "<", };
+        private static string[] _mathOperators = new string[]
         {
             "--", "++", "+=",
             "-=", "/=", "*=",
@@ -27,7 +27,7 @@ namespace LexAnalyzer
             "int", "float", "bool",
             "string", "main", "return"
         };
-        
+
 
         private readonly string _delimitersRegexPattern = $@"\s+|(\=|\(|\)|\;|{string.Join('|',
         _mathOperators
@@ -81,40 +81,19 @@ namespace LexAnalyzer
                 {
                     try
                     {
-                        if (n == 0)
-                        {
-
-                            tokens.Enqueue(new Token(GetTokenType(words[n], lastSymbol), words[n]));
-                        }
-                        else
-                        {
-                            lastSymbol = words[n - 1];
-                            tokens.Enqueue(new Token(GetTokenType(words[n], lastSymbol), words[n]));
-                        }
-                        if (n == words.Length) lastSymbol = words[n];
+                        tokens.Enqueue(new Token(GetTokenType(words[n]), words[n]));
                     }
                     catch (LexException exception)
                     {
-                        if (exception.Message == "Wrong token")
-                        {
-                            throw new LexException($"Wrong token - Line {_line}: {words[n]}");
-                        }
-                        else
-                        {
-                            throw new LexException($"Unexpected token - Line {_line}: {lastSymbol}");
-                        }
-
+                        throw new LexException($"Unexpected token - Line {_line}: ");
                     }
                 }
-
                 GetNextLine();
             }
-
             PrintTokens();
-            lastSymbol = "";
         }
 
-        private TokenType GetTokenType(string line, string preline)
+        private TokenType GetTokenType(string line)
         {
 
             if (_keyWords.Contains(line))
@@ -175,7 +154,7 @@ namespace LexAnalyzer
                 return TokenType.RPar;
             }
 
-                if (Regex.IsMatch(line, _integerRegex.ToString()))
+            if (Regex.IsMatch(line, _integerRegex.ToString()))
                 return TokenType.Integer;
 
             if (Regex.IsMatch(line, _floatRegex.ToString()))
@@ -187,17 +166,9 @@ namespace LexAnalyzer
             if (Regex.IsMatch(line, _boolRegex.ToString()))
                 return TokenType.Bool;
 
-            if (_keyWords.Contains(preline) || _boolOperators.Contains(preline) || _mathOperators.Contains(preline) || preline == "=")
-                if (Regex.IsMatch(line, _identificatorRegex.ToString()))
-                    return TokenType.Identificator;
-                else
-                {
-                    lastSymbol = line;
-                    throw new LexException("Wrong token");
+            if (Regex.IsMatch(line, _identificatorRegex.ToString()))
+                return TokenType.Identificator;
 
-                }
-
-            lastSymbol = line;
             throw new LexException("Null token");
         }
 
