@@ -2,37 +2,36 @@
 
 namespace LexAnalyzer
 {
-    internal class Analyzer
+    public class Analyzer
     {
         private Regex _identificatorRegex = new Regex(@"^[a-zA-Z_][a-zA-Z0-9_]*$");
         private Regex _integerRegex = new Regex(@"^-?\d+$");
-        private Regex _stringRegex = new Regex(@"^"".*""$"); /// 
+        private Regex _stringRegex = new Regex(@"^"".*""$"); ///
         private Regex _floatRegex = new Regex(@"^[-\+]?[\d]*[\.][\d]+(?:[eE][-\+]?[\d]+)?$");
         private Regex _boolRegex = new Regex(@"^(true|false)$");
 
         private string? currentLine = string.Empty;
 
+        private static string[] _boolOperators = new string[] { "==", ">=", "<=", "!=", ">", "<",  };
+        private static string[] _mathOperators = new string[] 
+        {
+            "--", "++", "+=",
+            "-=", "/=", "*=",
+            "%=", "+", "-",
+            "*", "/", "%",
+        };
+
+
         private string[] _keyWords = new string[]
-        {   "cout", "cin", "while",
-            "for", "continue", "break",
-            "if", "else", "if else",
+        {   /*"cout",*/ "cin",
             "int", "float", "bool",
             "string", "main", "return"
         };
-        private static string[] _operators = new string[]
-        {   ">>", "<<", "++", "--", "!=",
-            ">=", "==", "/=", "-=", "^=",
-            "+=", "*=", "%=", "<=",
-            ",", "+", "-",
-            "/", "*", "%",
-             "=",
-            ">", ";",
-            "<", "(", ")",
-            "{", "}"
-        };
+        
 
-        private readonly string _delimitersRegexPattern = $@"\s+|({string.Join('|',
-        _operators
+        private readonly string _delimitersRegexPattern = $@"\s+|(\=|\(|\)|\;|{string.Join('|',
+        _mathOperators
+            .Concat(_boolOperators)
             .Select(
                 o => $"\\{string.Join('\\', o.ToArray())}"
             )
@@ -82,7 +81,6 @@ namespace LexAnalyzer
                 {
                     try
                     {
-
                         if (n == 0)
                         {
 
@@ -94,8 +92,6 @@ namespace LexAnalyzer
                             tokens.Enqueue(new Token(GetTokenType(words[n], lastSymbol), words[n]));
                         }
                         if (n == words.Length) lastSymbol = words[n];
-
-
                     }
                     catch (LexException exception)
                     {
@@ -122,12 +118,64 @@ namespace LexAnalyzer
         {
 
             if (_keyWords.Contains(line))
+            {
                 return TokenType.KeyWord;
+            }
 
-            if (_operators.Contains(line))
-                return TokenType.Operator;
+            if (_mathOperators.Contains(line))
+                return TokenType.MathOperator;
 
-            if (Regex.IsMatch(line, _integerRegex.ToString()))
+            if (_boolOperators.Contains(line))
+                return TokenType.BoolOperator;
+
+            if (line == ";")
+            {
+                return TokenType.SemicolonOperator;
+            }
+
+            if (line == "=")
+            {
+                return TokenType.AssignOperator;
+            }
+
+            if (line == "if" || line == "else")
+            {
+                return TokenType.IfStatement;
+            }
+
+            if (line == "while")
+            {
+                return TokenType.WhileStatement;
+            }
+
+            if (line == "for")
+            {
+                return TokenType.ForStatement;
+            }
+
+            if (line == "break" || line == "continue")
+            {
+                return TokenType.ControlStatement;
+            }
+
+            /*if(line == "\r", "    ")*/
+
+            if (line == "cout")
+            {
+                return TokenType.Log;
+            }
+
+            if (line == "(" || line == "{")
+            {
+                return TokenType.LPar;
+            }
+
+            if (line == ")" || line == "}")
+            {
+                return TokenType.RPar;
+            }
+
+                if (Regex.IsMatch(line, _integerRegex.ToString()))
                 return TokenType.Integer;
 
             if (Regex.IsMatch(line, _floatRegex.ToString()))
@@ -139,7 +187,7 @@ namespace LexAnalyzer
             if (Regex.IsMatch(line, _boolRegex.ToString()))
                 return TokenType.Bool;
 
-            if (_keyWords.Contains(preline) || _operators.Contains(preline))
+            if (_keyWords.Contains(preline) || _boolOperators.Contains(preline) || _mathOperators.Contains(preline) || preline == "=")
                 if (Regex.IsMatch(line, _identificatorRegex.ToString()))
                     return TokenType.Identificator;
                 else
@@ -155,47 +203,10 @@ namespace LexAnalyzer
 
         private void PrintTokens()
         {
-            List<Token> integers = new List<Token>();
-            List<Token> booleans = new List<Token>();
-            List<Token> strings = new List<Token>();
-            List<Token> floats = new List<Token>();
-            List<Token> operators = new List<Token>();
-            List<Token> keywords = new List<Token>();
-            List<Token> identificators = new List<Token>();
-
             foreach (var token in tokens)
             {
-                if (token.Type is TokenType.Integer) integers.Add(token);
-                if (token.Type is TokenType.Bool) booleans.Add(token);
-                if (token.Type is TokenType.String) strings.Add(token);
-                if (token.Type is TokenType.Float) floats.Add(token);
-                if (token.Type is TokenType.Operator) operators.Add(token);
-                if (token.Type is TokenType.KeyWord) keywords.Add(token);
-                if (token.Type is TokenType.Identificator) identificators.Add(token);
+                Console.WriteLine(token);
             }
-
-            integers = integers.Distinct().ToList();
-            booleans = booleans.Distinct().ToList();
-            strings = strings.Distinct().ToList();
-            floats = floats.Distinct().ToList();
-            operators = operators.Distinct().ToList();
-            keywords = keywords.Distinct().ToList();
-            identificators = identificators.Distinct().ToList();
-
-            foreach (var integer in integers) Console.WriteLine(integer);
-            Console.WriteLine("-----------------");
-            foreach(var boolean in booleans) Console.WriteLine(boolean);
-            Console.WriteLine("-----------------");
-            foreach (var str in strings) Console.WriteLine(str);
-            Console.WriteLine("-----------------");
-            foreach (var fl in floats) Console.WriteLine(fl);
-            Console.WriteLine("-----------------");
-            foreach (var op in operators) Console.WriteLine(op);
-            Console.WriteLine("-----------------");
-            foreach (var kw in keywords) Console.WriteLine(kw);
-            Console.WriteLine("-----------------");
-            foreach (var id in identificators) Console.WriteLine(id);
-
         }
 
         public Token GetToken()
